@@ -21,7 +21,7 @@
 // ============================================================================
 
 const DATA_META = {
-  version: "0.1.0",
+  version: "0.2.0",
   updated: "2026-08-24",
   disclaimer: "Образовательный проект. Все сведения из открытых источников."
 };
@@ -133,7 +133,7 @@ const SYSTEMS = [
     range_km_min: 500, range_km_max: 600,
     status: "на вооружении",
     flight_note: null,
-    notes: "Двухступенчатая БЧ Mephisto для заглублённых целей. Обсуждается поставка Украине.",
+    notes: "Официально «более 500 км» без уточнений; в прессе встречаются оценки до ~600 км. Двухступенчатая БЧ Mephisto для заглублённых целей. Обсуждается поставка Украине.",
     sources: [
       {label: "Wikipedia: TAURUS KEPD 350", url: "https://en.wikipedia.org/wiki/TAURUS_KEPD_350"}
     ],
@@ -205,10 +205,10 @@ const SYSTEMS = [
     country: "Россия", klass: "Баллистическая",
     platform: "самоходная наземная ПУ",
     speed_mach: null, speed_kmh: null,
-    range_km_min: 480, range_km_max: 700,
+    range_km_min: 415, range_km_max: 500,
     status: "на вооружении",
     flight_note: "до ~500 км — порядка 5–7 минут (квазибаллистическая траектория)",
-    notes: "Официально 500 км; часть источников утверждает большие значения. Мобильность делает точку пуска переменной.",
+    notes: "Подтверждённая дальность 400–415 км, публично цитируется до 500 км (наследие лимитов ДРСМД). RUSI допускает больше при лёгкой БЧ и настильной траектории.",
     sources: [
       {label: "Wikipedia: 9K720 Iskander", url: "https://en.wikipedia.org/wiki/9K720_Iskander"}
     ],
@@ -242,9 +242,9 @@ const SYSTEMS = [
     platform: "M270A2, HIMARS",
     speed_mach: null, speed_kmh: null,
     range_km_min: 500, range_km_max: 650,
-    status: "в разработке",
+    status: "на вооружении",
     flight_note: null,
-    notes: "Приёмник ATACMS. Начальная версия ≥499 км, инкрементальные наращивания до ~650+ км.",
+    notes: "Приёмник ATACMS. Increment 1 принята: Milestone C — июль 2025, первые боевые применения — март 2026. Начальная версия ≥499 км, инкрементальные наращивания до ~650+ км.",
     sources: [
       {label: "Wikipedia: Precision Strike Missile", url: "https://en.wikipedia.org/wiki/Precision_Strike_Missile"}
     ],
@@ -310,12 +310,12 @@ const SYSTEMS = [
     id: "kinzhal",
     name: "Кинжал (Х-47М2)",
     country: "Россия", klass: "Гиперзвуковая",
-    platform: "МиГ-31К, Ту-22М3 (заявлено)",
+    platform: "МиГ-31К, Ту-22М3, Су-34 (заявлено)",
     speed_mach: null, speed_kmh: null,
-    range_km_min: 1500, range_km_max: 2000,
+    range_km_min: 460, range_km_max: 480,
     status: "на вооружении",
-    flight_note: "заявленная дальность включает радиус носителя; собственная дальность оценивается западными источниками существенно ниже",
-    notes: "Аэробаллистическая с маневрирующей ГЧ. Заявления о «неуязвимости» оспорены применением Patriot в 2023.",
+    flight_note: "российские медиа заявляют 2000 км с МиГ-31К и 3000 км с Ту-22М3 — это радиус носителя ПЛЮС дальность ракеты",
+    notes: "Аэробаллистическая с маневрирующей ГЧ. Западная оценка собственной дальности ракеты — 460–480 км (Wikipedia); цифры 2000–3000 км получаются прибавлением радиуса носителя. «Неуязвимость» оспорена перехватом Patriot в 2023.",
     sources: [
       {label: "Wikipedia: Kh-47M2 Kinzhal", url: "https://en.wikipedia.org/wiki/Kh-47M2_Kinzhal"}
     ],
@@ -400,10 +400,10 @@ const SYSTEMS = [
     country: "Южная Корея", klass: "Баллистическая",
     platform: "тяжёлые ТПУ",
     speed_mach: null, speed_kmh: null,
-    range_km_min: 300, range_km_max: 5500,
+    range_km_min: 600, range_km_max: 5500,
     status: "на вооружении",
     flight_note: null,
-    notes: "Экстремальный интервал — особенность системы: сверхтяжёлая ГЧ (~8 т) при малой дальности либо лёгкая ГЧ при большой. Показывает, как один комплекс покрывает разные сценарии.",
+    notes: "Официальных данных о дальности нет вовсе; публикации расходятся от ~600 км со сверхтяжёлой БЧ (8–9 т) до 3500 км и спекулятивных 5500 км с лёгкой. Редкий случай, когда сам интервал — главная честная характеристика.",
     sources: [
       {label: "Wikipedia: Hyunmoo", url: "https://en.wikipedia.org/wiki/Hyunmoo"}
     ],
@@ -420,7 +420,7 @@ const SYSTEMS = [
     range_km_min: 280, range_km_max: 300,
     status: "на вооружении",
     flight_note: null,
-    notes: "Противокорабельная; в апреле 2022 двумя попаданиями выведен из строя крейсер «Москва». Применялась и по наземным целям.",
+    notes: "Противокорабельная КР, потопившая крейсер «Москва» (апрель 2022). Подтверждённая базовая дальность 280–300 км; заявления о модернизации до ~360 км и применении по наземным целям независимого подтверждения не имеют.",
     sources: [
       {label: "Wikipedia: R-360 Neptune", url: "https://en.wikipedia.org/wiki/R-360_Neptune"}
     ],
@@ -432,12 +432,13 @@ const SYSTEMS = [
     country: "Украина", klass: "Крылатая",
     platform: "мобильные наземные ПУ",
     speed_mach: null, speed_kmh: null,
-    range_km_min: 500, range_km_max: 1000,
+    range_km_min: 1000, range_km_max: 1000,
     status: "на вооружении",
     flight_note: null,
-    notes: "Модернизация Р-360 под удары по наземным целям. Заявлена дальность до 1000 км (март 2025); независимых подтверждений верхней границы нет.",
+    notes: "Единственная опубликованная цифра — заявление Зеленского (15.03.2025) об испытании и боевом применении на 1000 км (цитировали Reuters/BBC); осенью 2025 показано видео пусков. Независимой верификации нет — кольцо показывает ЗАЯВЛЕННОЕ значение.",
     sources: [
-      {label: "Слово и Дело: сравнение украинских ракет", url: "https://ru.slovoidilo.ua/2025/09/03/infografika/obshhestvo/novye-ukrainskie-rakety-kakaya-dalnost-skorost-i-ves-boegolovok"}
+      {label: "Militarnyi: Long Neptune достигла 1000 км", url: "https://militarnyi.com/en/news/long-neptune-has-reached-range-of-1000-km/"},
+      {label: "Newsweek: Long Neptune in action", url: "https://www.newsweek.com/ukraine-long-neptune-missile-russia-war-zelensky-11046478"}
     ],
     deployments: []
   },
@@ -447,13 +448,14 @@ const SYSTEMS = [
     country: "Украина", klass: "Крылатая",
     platform: "наземные ТПУ",
     speed_mach: null, speed_kmh: null,
-    range_km_min: 1000, range_km_max: 3000,
-    status: "в разработке",
+    range_km_min: 500, range_km_max: 3000,
+    status: "на вооружении",
     flight_note: null,
-    notes: "Анонс августа 2025; госиспытания пройдено, серийное производство. Заявлено до 3000 км и БЧ свыше 1 т; наблюдатели оценивают практически достижимые цели до ~2400 км. Самый широкий интервал в базе — данные только от разработчика.",
+    notes: "FP-5 Fire Point. Производитель заявляет до 3000 км с БЧ ~1100 кг; аналитики скептичны (OSINT: до цели доходит ~1/3 пусков). Подтверждено: серийное производство, применение с октября 2025, удар по арсеналу GRAU глубже 500 км (февраль 2026), но и сбития парой A-50U (июль 2026). Нижняя граница интервала — документированная глубина ударов, верхняя — реклама производителя.",
     sources: [
       {label: "BBC: что известно о «Фламинго»", url: "https://www.bbc.com/russian/articles/cy0qd5png8qo"},
-      {label: "Wikipedia: Фламинго (ракета)", url: "https://ru.wikipedia.org/wiki/%D0%A4%D0%BB%D0%B0%D0%BC%D0%B8%D0%BD%D0%B3%D0%BE_(%D1%80%D0%B0%D0%BA%D0%B5%D1%82%D0%B0)"}
+      {label: "Wikipedia: FP-5 Flamingo", url: "https://en.wikipedia.org/wiki/FP-5_Flamingo"},
+      {label: "УП: анализ всех известных пусков", url: "https://www.pravda.com.ua/eng/articles/2026/05/03/8032901/"}
     ],
     deployments: []
   },
@@ -464,10 +466,11 @@ const SYSTEMS = [
     platform: "мобильные наземные ПУ",
     speed_mach: null, speed_kmh: null,
     range_km_min: 280, range_km_max: 500,
-    status: "в разработке",
+    status: "на вооружении",
     flight_note: null,
-    notes: "ОТРК с БЧ ~500 кг; по состоянию на июнь 2025 — начальный этап серийного производства.",
+    notes: "БЧ ~480 кг. Серийное производство развёрнуто в 2025, первое боевое применение подтверждено украинской стороной; количество пусков не раскрывается — Киев использует неопределённость как средство растяжения ПВО. Экспортный Hrim-2 ограничен ~280–300 км (MTCR), внутренний Сапсан — до 500 км.",
     sources: [
+      {label: "GlobalSecurity: Sapsan specs", url: "https://www.globalsecurity.org/military/world/ukraine/grom-specs.htm"},
       {label: "Wikipedia: Hrim-2", url: "https://en.wikipedia.org/wiki/Hrim-2"}
     ],
     deployments: []
@@ -480,10 +483,10 @@ const SYSTEMS = [
     country: "США", klass: "МБР",
     platform: "шахтные ПУ",
     speed_mach: null, speed_kmh: null,
-    range_km_min: 13000, range_km_max: 15000,
+    range_km_min: 12000, range_km_max: 13000,
     status: "на вооружении",
     flight_note: "межконтинентальная дистанция ~30 минут",
-    notes: "Основание стратегической триады США; кольца носят иллюстративный характер глобального масштаба.",
+    notes: "Стандартная цитируемая оценка ~13 000 км (зависит от полезной нагрузки), цифры 15 000 км надёжными источниками не подтверждаются. Замена на LGM-35 Sentinel сдвигается к ~2030.",
     sources: [
       {label: "Wikipedia: LGM-30 Minuteman", url: "https://en.wikipedia.org/wiki/LGM-30_Minuteman"}
     ],
