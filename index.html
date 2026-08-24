@@ -2,21 +2,21 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Missile Atlas — Ракетный атлас: досягаемость по открытым данным</title>
 <link rel="stylesheet" href="lib/leaflet.css">
 <style>
   :root{
     --bg:#0b0e14; --panel:#11151d; --panel2:#161b25; --border:#232b38;
     --text:#dbe2ea; --muted:#8a94a6; --accent:#e8a13c; --cyan:#4fc3f7;
-    --sidebar-w:340px;
+    --sidebar-w:340px; --sat:env(safe-area-inset-top,0px); --sab:env(safe-area-inset-bottom,0px);
   }
-  *{box-sizing:border-box;margin:0;padding:0}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   html,body{height:100%}
   body{background:var(--bg);color:var(--text);font:14px/1.45 -apple-system,"Segoe UI",Roboto,Arial,sans-serif}
 
   #app{display:flex;height:100vh;height:100dvh}
-  /* ---------------------------------------------------------- сайдбар */
+  /* ---------------------------------------------------------- сайдбар (десктоп) */
   #sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);background:var(--panel);
     border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:1200}
   #sidebar header{display:flex;align-items:flex-start;justify-content:space-between;
@@ -28,47 +28,56 @@
     cursor:pointer;flex-shrink:0}
   #btnInfo:hover{border-color:var(--accent);color:var(--accent)}
   #searchwrap{padding:10px 12px 6px}
-  #q{width:100%;background:var(--panel2);border:1px solid var(--border);color:var(--text);
+  #q,#qM{width:100%;background:var(--panel2);border:1px solid var(--border);color:var(--text);
     padding:7px 10px;border-radius:6px;font-size:13px;outline:none}
-  #q:focus{border-color:var(--accent)}
+  #q:focus,#qM:focus{border-color:var(--accent)}
   .filters{display:flex;gap:6px;padding:0 12px 10px}
   .filters select{flex:1;background:var(--panel2);border:1px solid var(--border);color:var(--text);
     padding:6px 8px;border-radius:6px;font-size:12px;outline:none}
-  #list{list-style:none;overflow-y:auto;flex:1;padding-bottom:8px}
-  #list li{padding:9px 12px 9px 10px;border-left:3px solid transparent;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.03)}
-  #list li:hover{background:var(--panel2)}
-  #list li.sel{border-left-color:var(--accent);background:var(--panel2)}
-  #list .nm{font-weight:600;font-size:13.5px}
-  #list .mt{display:flex;gap:6px;align-items:center;margin-top:3px;font-size:11px;color:var(--muted);flex-wrap:wrap}
+  ul.syslist{list-style:none;overflow-y:auto;flex:1;padding-bottom:8px}
+  ul.syslist li{padding:9px 12px 9px 10px;border-left:3px solid transparent;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.03)}
+  ul.syslist li:hover{background:var(--panel2)}
+  ul.syslist li.sel{border-left-color:var(--accent);background:var(--panel2)}
+  .nm{font-weight:600;font-size:13.5px}
+  .mt{display:flex;gap:6px;align-items:center;margin-top:3px;font-size:11px;color:var(--muted);flex-wrap:wrap}
   .badge{padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;color:#0b0e14}
   .b-cruise{background:var(--cyan)} .b-ballistic{background:#ef5350}
   .b-hyper{background:var(--accent)} .b-icbm{background:#b388ff}
   #sidebar footer{padding:8px 12px;border-top:1px solid var(--border);color:var(--muted);font-size:10.5px;line-height:1.5}
-  #sidebar footer a{color:var(--muted)}
 
   /* ------------------------------------------------------------- карта */
   #main{flex:1;position:relative}
   #map{position:absolute;inset:0;background:#0b0e14}
   #map:fullscreen{width:100vw;height:100vh}
 
-  #legend{position:absolute;left:10px;bottom:26px;z-index:1050;background:rgba(17,21,29,.92);
-    border:1px solid var(--border);border-radius:6px;padding:8px 11px;font-size:11.5px;color:var(--muted);
-    display:flex;flex-direction:column;gap:5px}
-  .lg{display:flex;align-items:center;gap:8px}
-  .sw{width:26px;height:0;border-top:2px solid}
-  .sw-max{border-color:var(--accent);border-top-style:dashed}
-  .sw-min{border-color:var(--cyan)}
+  #legendPill{position:absolute;left:10px;bottom:26px;z-index:1050;
+    background:rgba(17,21,29,.92);border:1px solid var(--border);border-radius:8px;
+    padding:6px 10px;font-size:11.5px;color:var(--muted);cursor:pointer;user-select:none;
+    display:flex;align-items:center;gap:7px;max-width:min(300px,70vw)}
+  #legendPill .sw{width:20px;height:0;border-top:2px solid;display:inline-block}
+  #legendPill .sw-min{border-color:var(--cyan)}
+  #legendPill .sw-max{border-color:var(--accent);border-top-style:dashed}
+  #legendPill .full{display:none;flex-direction:column;gap:4px}
+  #legendPill.open .full{display:flex}
+  #legendPill.open{flex-direction:column;align-items:stretch;padding:9px 11px}
+  #legendPill .mini{display:flex;gap:7px;align-items:center}
 
-  #btnPoint{position:absolute;top:10px;left:50px;z-index:1060;background:rgba(17,21,29,.94);
-    border:1px solid var(--border);color:var(--text);padding:7px 12px;border-radius:6px;font-size:12.5px;cursor:pointer}
+  #btnPoint{position:absolute;top:54px;right:10px;z-index:1060;width:38px;height:38px;
+    background:rgba(17,21,29,.94);border:1px solid var(--border);color:var(--text);
+    border-radius:8px;font-size:16px;cursor:pointer;line-height:1}
   #btnPoint:hover,#btnPoint.on{border-color:var(--accent);color:var(--accent)}
 
-  #pointBar{position:absolute;left:50%;transform:translateX(-50%);bottom:22px;z-index:1150;
+  #pointBar{position:absolute;left:50%;transform:translateX(-50%);z-index:1150;
+    bottom:calc(24px + var(--sab));
     background:rgba(17,21,29,.96);border:1px solid var(--accent);border-radius:6px;
-    padding:8px 12px;display:flex;gap:12px;align-items:center;font-size:12.5px}
+    padding:8px 12px;display:flex;gap:12px;align-items:center;font-size:12.5px;white-space:nowrap}
   #pointCancel{background:none;border:none;color:var(--accent);font-size:16px;cursor:pointer;line-height:1}
 
-  /* ---------------------------------------------------------- карточка */
+  .ringlbl{background:rgba(17,21,29,.92);border:1px solid var(--accent);color:var(--text);
+    font-size:11px;padding:2px 8px;border-radius:10px;white-space:nowrap;transform:translate(-50%,-135%)}
+  .ringlbl::before{content:"";display:none}
+
+  /* ---------------------------------------------------------- карточка (десктоп) */
   #card{position:absolute;top:12px;right:12px;width:360px;max-width:calc(100vw - 24px);
     max-height:calc(100vh - 24px);overflow-y:auto;z-index:1200;background:rgba(17,21,29,.97);
     border:1px solid var(--border);border-radius:8px;padding:14px 16px}
@@ -80,15 +89,50 @@
   .row{display:flex;justify-content:space-between;gap:12px;font-size:12.5px;border-bottom:1px dotted rgba(255,255,255,.07);padding-bottom:6px}
   .row .k{color:var(--muted);flex-shrink:0}
   .row .v{text-align:right}
-  #card .note{margin-top:10px;font-size:12px;color:var(--muted);line-height:1.5}
-  #card h3{font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:14px 0 6px}
-  #card ul{list-style:none;display:flex;flex-direction:column;gap:4px;font-size:12.5px}
-  #card ul.src a{color:var(--cyan);text-decoration:none;font-size:12px}
-  #card ul.src a:hover{text-decoration:underline}
+  .note{margin-top:10px;font-size:12px;color:var(--muted);line-height:1.5}
+  .sech{font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:14px 0 6px}
+  ul.deps,ul.srcs{list-style:none;display:flex;flex-direction:column;gap:4px;font-size:12.5px}
+  ul.srcs a{color:var(--cyan);text-decoration:none;font-size:12px}
+  ul.srcs a:hover{text-decoration:underline}
   .rngbar{margin-top:12px}
   .rngbar .cap{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px}
   .rngbar .track{height:6px;background:var(--panel2);border-radius:3px;overflow:hidden}
   .rngbar .fill{height:100%;background:linear-gradient(90deg,var(--cyan),var(--accent))}
+
+  /* ================================================================ ШТОКА */
+  #sheet{position:absolute;left:0;right:0;bottom:0;z-index:1250;display:none;
+    background:rgba(17,21,29,.98);border:1px solid var(--border);border-bottom:none;
+    border-radius:16px 16px 0 0;box-shadow:0 -8px 32px rgba(0,0,0,.45);
+    will-change:transform}
+  #grip{padding:9px 0 7px;text-align:center;cursor:grab;touch-action:none}
+  #grip span{display:inline-block;width:46px;height:4px;border-radius:2px;background:#3d4959}
+  #grip:active{cursor:grabbing}
+  #sheetBody{overflow:hidden}
+  .shView{display:none}
+  .shView.on{display:flex;flex-direction:column}
+  .shHead{display:flex;align-items:center;justify-content:space-between;padding:2px 16px 8px}
+  .shHead h1{font-size:15px;font-weight:700;letter-spacing:.3px}
+  .shHead .sub{color:var(--muted);font-size:10.5px;margin-top:2px}
+  .shPad{padding:0 14px}
+  #chips{display:flex;gap:6px;overflow-x:auto;padding:8px 14px 4px;scrollbar-width:none;flex-shrink:0}
+  #chips::-webkit-scrollbar{display:none}
+  .chip{flex:0 0 auto;background:var(--panel2);border:1px solid var(--border);color:var(--text);
+    padding:5px 12px;border-radius:16px;font-size:12px;cursor:pointer}
+  .chip.on{border-color:var(--accent);color:var(--accent);font-weight:600}
+  .shFiltersRow{display:flex;gap:6px;padding:6px 14px 8px}
+  .shFiltersRow select{flex:1;background:var(--panel2);border:1px solid var(--border);color:var(--text);
+    padding:6px 8px;border-radius:6px;font-size:12px;outline:none}
+  ul.syslist li:active{background:var(--panel2)}
+  .shFoot{padding:6px 14px calc(8px + var(--sab));border-top:1px solid var(--border);
+    color:var(--muted);font-size:10px;line-height:1.4}
+  /* детальный вид штока */
+  #shBack{background:none;border:none;color:var(--accent);font-size:13px;cursor:pointer;
+    padding:2px 0 8px;text-align:left}
+  #shDetail h2{font-size:16px}
+  #shDetail .rngbar{margin-top:10px}
+  #shDetail .sech:first-of-type{margin-top:12px}
+  .shScroll{overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(10px + var(--sab))}
+  .shNoSel{color:var(--muted);font-size:12px;padding:4px 16px 10px}
 
   /* ------------------------------------------------------------ модалка */
   #modalWrap{position:fixed;inset:0;z-index:2000;background:rgba(4,6,10,.72);
@@ -113,14 +157,22 @@
   ::-webkit-scrollbar-thumb{background:#2a3342;border-radius:5px}
   ::-webkit-scrollbar-track{background:transparent}
 
-  @media (max-width:900px){
-    #app{flex-direction:column-reverse}
-    #sidebar{width:100%;min-width:0;height:44vh;height:44dvh;border-right:none;border-top:1px solid var(--border)}
-    body.mapmode #sidebar{display:none}
-    #card{top:10px;left:10px;right:10px;bottom:auto;width:auto;max-height:48%}
-    #legend{font-size:10.5px;padding:6px 8px;bottom:22px}
-    body.pointmode #legend{opacity:.12}
+  /* десктоп: шток скрыт, легенда полная строка по умолчанию */
+  @media (min-width:900.01px){
+    #sheet{display:none !important}
+    #btnPoint{top:54px}
   }
+  /* мобилка */
+  @media (max-width:900px){
+    #sidebar,#card{display:none !important}
+    #sheet{display:block}
+    #legendPill{bottom:auto;top:10px;left:10px;max-width:46vw}
+    #btnPoint{top:10px;right:10px}
+    #pointBar{bottom:auto;top:58px;font-size:12px}
+    .leaflet-control-attribution{font-size:9px}
+  }
+  body.pointmode #legendPill{opacity:.12}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
@@ -128,7 +180,7 @@
   <aside id="sidebar">
     <header>
       <div>
-        <h1>РАКЕТНЫЙ АТЛАС</h1>
+        <h1>MISSILE ATLAS</h1>
         <div class="sub" id="metaSub"></div>
       </div>
       <button id="btnInfo" title="Что это и как читать">i</button>
@@ -138,7 +190,7 @@
       <select id="fCountry"></select>
       <select id="fClass"></select>
     </div>
-    <ul id="list"></ul>
+    <ul id="list" class="syslist"></ul>
     <footer>
       Данные: открытые источники (CSIS Missile Threat и др.)<br>
       Код — MIT · База данных — CC BY-SA 4.0
@@ -148,34 +200,77 @@
   <main id="main">
     <div id="map"></div>
 
-    <button id="btnPoint" hidden title="Построить кольца от любой точки карты">◈ кольца от произвольной точки</button>
+    <div id="legendPill" title="Обозначения">
+      <span class="mini"><span class="sw sw-min"></span><span class="sw sw-max"></span><span style="opacity:.55">≈</span></span>
+      <span class="full">
+        <span class="lg"><span class="sw sw-min"></span>&nbsp;минимальная оценка дальности</span>
+        <span class="lg"><span class="sw sw-max"></span>&nbsp;максимальная оценка дальности</span>
+        <span class="lg"><span style="opacity:.55">≈</span>&nbsp;расположение приблизительное</span>
+        <span class="lg dim" style="opacity:.6">подпись на кольце — время подлёта</span>
+      </span>
+    </div>
+
+    <button id="btnPoint" title="Построить кольца от любой точки">◈</button>
 
     <div id="pointBar" hidden>
       <span id="pointMsg">кликните по карте — кольца от выбранной точки</span>
       <button id="pointCancel" title="Отменить">×</button>
     </div>
 
-    <div id="legend">
-      <div class="lg"><span class="sw sw-min"></span>минимальная оценка дальности</div>
-      <div class="lg"><span class="sw sw-max"></span>максимальная оценка дальности</div>
-      <div class="lg"><span style="opacity:.55">≈</span>пунктир маркера — расположение приблизительное</div>
+    <!-- нижний шток (мобильный) -->
+    <div id="sheet">
+      <div id="grip"><span></span></div>
+      <div id="sheetBody">
+        <!-- список -->
+        <div id="shList" class="shView on">
+          <div class="shHead">
+            <div>
+              <h1>MISSILE ATLAS</h1>
+              <div class="sub" id="metaSubM"></div>
+            </div>
+            <button id="btnInfoM" style="background:var(--panel2);border:1px solid var(--border);color:var(--text);width:30px;height:30px;border-radius:50%;font-style:italic;font-family:Georgia,serif;cursor:pointer">i</button>
+          </div>
+          <div class="shPad"><input id="qM" type="text" placeholder="Поиск по названию или стране"></div>
+          <div id="chips"></div>
+          <div class="shFiltersRow"><select id="fCountryM"></select></div>
+          <ul id="listM" class="syslist shScroll"></ul>
+          <div class="shFoot">Карта © OpenStreetMap contributors © CARTO · данные из открытых источников · код MIT, база CC BY-SA</div>
+        </div>
+        <!-- детали системы -->
+        <div id="shDetail" class="shView shScroll">
+          <div class="shPad">
+            <button id="shBack">← к списку систем</button>
+            <h2 id="sName"></h2>
+            <div class="rngbar">
+              <div class="cap"><span id="rMin"></span><span>дальность, км</span><span id="rMax"></span></div>
+              <div class="track"><div class="fill" id="rFill"></div></div>
+            </div>
+            <div class="rows" id="sRows"></div>
+            <h3 class="sech">Точки развёртывания</h3>
+            <ul class="deps" id="sDeps"></ul>
+            <h3 class="sech">Источники</h3>
+            <ul class="srcs" id="sSrcs"></ul>
+            <p class="note" id="sNote"></p>
+          </div>
+        </div>
+      </div>
     </div>
   </main>
 </div>
 
-<!-- карточка системы -->
+<!-- карточка (десктоп) -->
 <aside id="card" hidden>
   <button id="cardClose" title="Закрыть">×</button>
   <h2 id="cName"></h2>
   <div class="rngbar">
-    <div class="cap"><span id="rMin"></span><span>дальность, км</span><span id="rMax"></span></div>
-    <div class="track"><div class="fill" id="rFill"></div></div>
+    <div class="cap"><span id="crMin"></span><span>дальность, км</span><span id="crMax"></span></div>
+    <div class="track"><div class="fill" id="cFill"></div></div>
   </div>
   <div class="rows" id="cRows"></div>
-  <h3>Точки развёртывания</h3>
-  <ul id="cDeps"></ul>
-  <h3>Источники</h3>
-  <ul class="src" id="cSrcs"></ul>
+  <h3 class="sech">Точки развёртывания</h3>
+  <ul class="deps" id="cDeps"></ul>
+  <h3 class="sech">Источники</h3>
+  <ul class="srcs" id="cSrcs"></ul>
   <p class="note" id="cNote"></p>
 </aside>
 
@@ -183,7 +278,7 @@
 <div id="modalWrap" hidden>
   <div id="modal" role="dialog" aria-modal="true">
     <button id="modalClose" title="Закрыть">×</button>
-    <h2>Ракетный атлас — что это?</h2>
+    <h2>Missile Atlas — что это?</h2>
     <div class="ver" id="modalVer"></div>
 
     <h3>Что это</h3>
@@ -202,14 +297,14 @@
       <li><b style="color:var(--accent)">жёлтый пунктир</b> — верхняя граница оценок. Реальная досягаемость лежит между кольцами;</li>
       <li>белая точка — точка развёртывания; <b>≈</b> рядом с ней означает приблизительную зону, а не точную позицию;</li>
       <li>режим <code>◈</code> строит кольца от любого места на карте;</li>
-      <li>время полёта указывается для крылатых ракет расчётом по маршевой скорости; для баллистических — текстовые оценки из публикаций.</li>
+      <li>подпись на внешнем кольце — дальность и оценка времени подлёта (для крылатых — расчёт по маршевой скорости, для баллистических — текстовые оценки из публикаций).</li>
     </ul>
 
     <h3>Откуда данные</h3>
     <p id="modalMeta"></p>
-    <p>У каждой системы в карточке перечислены конкретные источники. Основные справочные корпуса:
+    <p>У каждой системы перечислены конкретные источники. Основные справочные корпуса:
        <a href="https://missilethreat.csis.org" target="_blank" rel="noopener">CSIS Missile Threat</a>,
-       открытые энциклопедии и публикации специализированных СМИ.</p>
+       открытые энциклопедии и публикации специализированных СМИ. База прошла фактчек v0.2 (август 2026).</p>
 
     <h3>Насколько этому можно верить</h3>
     <p>Честный ответ: с точностью открытых данных. Практически это означает:</p>
@@ -245,6 +340,10 @@
 <script>
 'use strict';
 const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+const isMobile = () => matchMedia('(max-width:900px)').matches;
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const buzz = (ms=10) => { try{ navigator.vibrate && navigator.vibrate(ms); }catch(e){} };
 
 /* ------------------------------------------------------------------ карта */
 const baseLayers = {
@@ -283,7 +382,7 @@ function destPoint(lat,lonDeg,brgDeg,distKm){
   const o2=o1+Math.atan2(Math.sin(b)*Math.sin(dr)*Math.cos(l1),Math.cos(dr)-Math.sin(l1)*Math.sin(l2));
   return [l2/d, ((o2/d)+540)%360-180];
 }
-function geodesicRing(lat,lon,km,n=160){
+function geodesicRingPts(lat,lon,km,n=160){
   const pts=[];
   for(let i=0;i<n;i++) pts.push(destPoint(lat,lon,i*360/n,km));
   return pts;
@@ -291,41 +390,57 @@ function geodesicRing(lat,lon,km,n=160){
 
 /* -------------------------------------------------------------- состояние */
 const state = {
-  selected:null,     // объект системы
-  rings:null,        // L.layerGroup текущих колец
+  selected:null,
+  rings:null,
   pointMode:false,
-  filters:{q:'',country:'',klass:''}
+  filters:{q:'',country:'',klass:''},
+  sheet:{mode:'list',snap:1,y:0,dragging:false}
 };
 
 const CLASS_COLORS = {"Крылатая":"#4fc3f7","Баллистическая":"#ef5350","Гиперзвуковая":"#e8a13c","МБР":"#b388ff"};
 const CLASS_BADGE  = {"Крылатая":"b-cruise","Баллистическая":"b-ballistic","Гиперзвуковая":"b-hyper","МБР":"b-icbm"};
+const CLASSES = Object.keys(CLASS_COLORS);
 const cArr = s => Array.isArray(s.country) ? s.country : [s.country];
 
 /* --------------------------------------------------------------- интерфейс */
 $('#metaSub').textContent = `досягаемость по открытым данным · v${DATA_META.version} · ${DATA_META.updated}`;
+$('#metaSubM').textContent = `v${DATA_META.version} · обновлено ${DATA_META.updated}`;
 $('#modalVer').textContent = `версия данных ${DATA_META.version}, обновлено ${DATA_META.updated} · ${DATA_META.disclaimer}`;
-$('#modalMeta').textContent = `Актуальная редакция базы: ${DATA_META.updated}. ` +
-  'Каждая запись содержит ссылки на источники — они видны в карточке системы.';
+$('#modalMeta').textContent = `Актуальная редакция базы: ${DATA_META.updated}. Каждая запись содержит ссылки на источники — они видны в карточке системы.`;
 
-// селекторы фильтров
+// селекторы стран (десктоп + шток синхронизированы)
 {
   const cs=[...new Set(SYSTEMS.flatMap(cArr))].sort((a,b)=>a.localeCompare(b,'ru'));
-  const ks=[...new Set(SYSTEMS.map(s=>s.klass))];
-  for(const c of cs) $('#fCountry').insertAdjacentHTML('beforeend',`<option value="${c}">${c}</option>`);
-  for(const k of ks) $('#fClass').insertAdjacentHTML('beforeend',`<option value="${k}">${k}</option>`);
+  for(const sel of ['#fCountry','#fCountryM']){
+    $(sel).insertAdjacentHTML('beforeend','<option value="">Страна: все</option>');
+    for(const c of cs) $(sel).insertAdjacentHTML('beforeend',`<option value="${c}">${c}</option>`);
+  }
+  $('#fClass').insertAdjacentHTML('beforeend','<option value="">Класс: все</option>');
+  for(const k of CLASSES) $('#fClass').insertAdjacentHTML('beforeend',`<option value="${k}">${k}</option>`);
+}
+// чипсы классов (шток)
+{
+  const box=$('#chips');
+  box.insertAdjacentHTML('beforeend','<button class="chip on" data-k="">Все</button>');
+  for(const k of CLASSES){
+    const dot = CLASS_COLORS[k];
+    box.insertAdjacentHTML('beforeend',
+      `<button class="chip" data-k="${k}"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${dot};margin-right:5px"></span>${k}</button>`);
+  }
 }
 
-function fmtRange(s){ return `${s.range_km_min.toLocaleString('ru-RU')}–${s.range_km_max.toLocaleString('ru-RU')} км`; }
-
-function renderList(){
+function filteredSystems(){
   const f=state.filters, q=f.q.trim().toLowerCase();
-  const items=SYSTEMS.filter(s=>{
+  return SYSTEMS.filter(s=>{
     if(f.country && !cArr(s).includes(f.country)) return false;
     if(f.klass && s.klass!==f.klass) return false;
     if(q && !(s.name.toLowerCase().includes(q)||cArr(s).join(' ').toLowerCase().includes(q))) return false;
     return true;
   }).sort((a,b)=>a.name.localeCompare(b.name,'ru'));
-  $('#list').innerHTML = items.map(s=>`
+}
+function itemsHTML(){
+  const items=filteredSystems();
+  return items.map(s=>`
     <li data-id="${s.id}" class="${state.selected&&state.selected.id===s.id?'sel':''}">
       <div class="nm">${s.name}</div>
       <div class="mt">
@@ -335,57 +450,94 @@ function renderList(){
       </div>
     </li>`).join('') || '<li style="cursor:default;color:var(--muted)">ничего не найдено</li>';
 }
+function renderLists(){
+  const html=itemsHTML();
+  $('#list').innerHTML=html;
+  $('#listM').innerHTML=html;
+}
+function fmtRange(s){ return `${s.range_km_min.toLocaleString('ru-RU')}–${s.range_km_max.toLocaleString('ru-RU')} км`; }
 
-function clearRings(){ if(state.rings){ map.removeLayer(state.rings); state.rings=null; } }
-
-function drawRings(sys, origins){
-  clearRings();
-  const g=L.layerGroup(); let bounds=null;
-  for(const o of origins){
-    const rMax=geodesicRing(o.lat,o.lon,sys.range_km_max);
-    const rMin=geodesicRing(o.lat,o.lon,sys.range_km_min);
-    L.polygon(rMax,{color:'#e8a13c',weight:1.5,dashArray:'6 6',fill:true,fillOpacity:.05,interactive:true})
-      .bindTooltip(`${sys.name}: до ${sys.range_km_max.toLocaleString('ru-RU')} км — макс. оценка${o.name?' · '+o.name:''}`)
-      .addTo(g);
-    L.polygon(rMin,{color:'#4fc3f7',weight:1.5,fill:false,interactive:true})
-      .bindTooltip(`${sys.name}: до ${sys.range_km_min.toLocaleString('ru-RU')} км — мин. оценка${o.name?' · '+o.name:''}`)
-      .addTo(g);
-    L.circleMarker([o.lat,o.lon],{radius:5,color:'#fff',weight:1.5,fillColor:o.approximate?'#777':'#fff',
-        fillOpacity:.95}).bindTooltip((o.approximate?'≈ ':'')+o.name).addTo(g);
-    const b=L.polygon(rMax).getBounds();
-    bounds = bounds ? bounds.extend(b) : b;
-  }
-  state.rings=g; g.addTo(map);
-  if(bounds && origins.length){
-    const pt=bounds.getCenter();
-    const zoom=Math.min(map.getBoundsZoom(bounds)-1,10);
-    // на узких экранах карточка сверху — уводим центр колец под неё
-    const off = matchMedia('(max-width:900px)').matches
-      ? map.project(pt,zoom).subtract([0,Math.round(innerHeight*0.18)])
-      : map.project(pt,zoom).subtract([180,0]);
-    map.flyTo(map.unproject(off,zoom),zoom,{duration:.6});
-  }
+/* ------------------------------------------------------ анимация колец ---- */
+let rafId=null;
+function cancelAnim(){ if(rafId){cancelAnimationFrame(rafId);rafId=null;} }
+function animateRings(layers){ // layers: [{poly,lat,lon,km}]
+  cancelAnim();
+  if(reducedMotion || !layers.length){ layers.forEach(l=>l.poly.setLatLngs(geodesicRingPts(l.lat,l.lon,l.km))); return; }
+  const t0=performance.now(), DUR=520;
+  const ease=t=>1-Math.pow(1-t,3);
+  const frame=now=>{
+    const p=Math.min(1,(now-t0)/DUR), k=ease(p);
+    for(const l of layers) l.poly.setLatLngs(geodesicRingPts(l.lat,l.lon,Math.max(1,l.km*k)));
+    if(p<1) rafId=requestAnimationFrame(frame); else rafId=null;
+  };
+  rafId=requestAnimationFrame(frame);
 }
 
+function clearRings(){ cancelAnim(); if(state.rings){ map.removeLayer(state.rings); state.rings=null; } }
+
+function flightMin(s,km){ return Math.round(km/s.speed_kmh*60); }
+function fmtMin(m){ const h=Math.floor(m/60); return h? `~${h} ч ${m%60 ? (m%60)+' мин':'00'}` : `~${m} мин`; }
 function flightTimeText(s){
   if(s.speed_kmh){
-    const min=s.range_km_max/s.speed_kmh*60;
-    const h=Math.floor(min/60), m=Math.round(min%60);
-    return `~${h?h+' ч ':''}${m} мин на макс. дальность (расчёт по маршевой скорости)`;
+    return `${fmtMin(flightMin(s,s.range_km_max))} на макс. дальность (расчёт по маршевой скорости)`;
   }
   return s.flight_note || null;
 }
 
-function showCard(s){
-  $('#cName').textContent=s.name;
-  $('#rMin').textContent=s.range_km_min.toLocaleString('ru-RU');
-  $('#rMax').textContent=s.range_km_max.toLocaleString('ru-RU');
-  // полоса диапазона относительно общего максимума выборки
-  const gmax=Math.max(...SYSTEMS.map(x=>x.range_km_max));
-  $('#rFill').style.width=(s.range_km_min/gmax*100)+'%';
-  $('#rFill').style.marginLeft=(s.range_km_min/gmax*100)+'%';
-  $('#rFill').style.width=(Math.max(1,(s.range_km_max-s.range_km_min)/gmax*100))+'%';
+function drawRings(sys, origins){
+  clearRings();
+  const g=L.layerGroup(); let bounds=null;
+  const animLayers=[];
+  let labelData=null;
+  for(const o of origins){
+    const mk=(km,color,dashed,fill)=>{
+      const poly=L.polygon(geodesicRingPts(o.lat,o.lon,Math.max(1,km)),{
+        color, weight:1.5, dashArray:dashed?'6 6':null,
+        fill:!!fill, fillOpacity:fill?.05:0, interactive:true});
+      poly.bindTooltip(`${sys.name}: до ${km.toLocaleString('ru-RU')} км${dashed?' — макс. оценка':' — мин. оценка'}${o.name?' · '+o.name:''}`);
+      g.addLayer(poly);
+      animLayers.push({poly,lat:o.lat,lon:o.lon,km});
+      return poly;
+    };
+    mk(sys.range_km_max,'#e8a13c',true,true);
+    if(sys.range_km_min!==sys.range_km_max) mk(sys.range_km_min,'#4fc3f7',false,false);
+    else animLayers.pop(); // совпадающие кольца не дублируем в анимации
+    L.circleMarker([o.lat,o.lon],{radius:5,color:'#fff',weight:1.5,fillColor:o.approximate?'#777':'#fff',
+        fillOpacity:.95}).bindTooltip((o.approximate?'≈ ':'')+o.name).addTo(g);
 
+    if(!labelData && sys.range_km_max>=800){
+      labelData={lat:o.lat,lon:o.lon,km:sys.range_km_max,name:o.name};
+    }
+    const b=L.polygon(geodesicRingPts(o.lat,o.lon,sys.range_km_max)).getBounds();
+    bounds = bounds ? bounds.extend(b) : b;
+  }
+  // подпись на внешнем кольце первой точки: дальность + время подлёта
+  if(labelData){
+    const t = sys.speed_kmh ? ` · ${fmtMin(flightMin(sys,labelData.km))}` : '';
+    const np = destPoint(labelData.lat,labelData.lon,0,labelData.km);
+    L.marker(np,{interactive:false,icon:L.divIcon({
+      className:'', iconSize:[0,0],
+      html:`<span class="ringlbl">${labelData.km.toLocaleString('ru-RU')} км${t}</span>`
+    })}).addTo(g);
+  }
+  state.rings=g; g.addTo(map);
+  animateRings(animLayers);
+  if(bounds && origins.length){
+    const pt=bounds.getCenter();
+    const zoom=Math.min(map.getBoundsZoom(bounds)-1,10);
+    let off;
+    if(isMobile()){
+      const shH=$('#sheet').getBoundingClientRect().height||0;
+      off=map.project(pt,zoom).subtract([0,shH/2]);
+    }else{
+      off=map.project(pt,zoom).subtract([180,0]);
+    }
+    map.flyTo(map.unproject(off,zoom),zoom,{duration:.6});
+  }
+}
+
+/* ------------------------------------------- общие построители контента --- */
+function rowsHTML(s){
   const rows=[
     ['Класс',s.klass],
     ['Страна',cArr(s).join(', ')],
@@ -395,33 +547,150 @@ function showCard(s){
     ['Статус',s.status],
     ['Время полёта',flightTimeText(s)]
   ].filter(r=>r[1]);
-  $('#cRows').innerHTML=rows.map(([k,v])=>`<div class="row"><span class="k">${k}</span><span class="v">${v}</span></div>`).join('');
+  return rows.map(([k,v])=>`<div class="row"><span class="k">${k}</span><span class="v">${v}</span></div>`).join('');
+}
+function fillBar(s, fillEl, minEl, maxEl){
+  const gmax=Math.max(...SYSTEMS.map(x=>x.range_km_max));
+  const start=s.range_km_min/gmax*100, w=Math.max(1,(s.range_km_max-s.range_km_min)/gmax*100);
+  minEl.textContent=s.range_km_min.toLocaleString('ru-RU');
+  maxEl.textContent=s.range_km_max.toLocaleString('ru-RU');
+  fillEl.style.marginLeft=start+'%';
+  fillEl.style.width=w+'%';
+}
 
-  $('#cDeps').innerHTML=s.deployments.length
-    ? s.deployments.map(d=>`<li>${d.approximate?'≈ ':''}${d.name} <span style="color:var(--muted)">· ${d.lat.toFixed(2)}, ${d.lon.toFixed(2)}</span></li>`).join('')
+/* --------------------------------------------------------- шток (mobile) -- */
+const SHEET={};
+function sheetMetrics(){
+  const vh=innerHeight;
+  const full=Math.round(vh*.88);
+  const snaps = state.sheet.mode==='detail'
+    ? [Math.round(76+parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sab'))||76), Math.round(vh*.46), full]
+    : [Math.round(150), Math.round(vh*.52), full];
+  return {full,snaps,vh};
+}
+function sheetApply(y,animate=true){
+  const el=$('#sheet');
+  state.sheet.y=y;
+  el.style.transition = animate && !reducedMotion ? 'transform .28s cubic-bezier(.2,.8,.2,1)' : 'none';
+  el.style.transform=`translateY(${y}px)`;
+}
+function sheetSet(mode,snapIdx){
+  state.sheet.mode=mode;
+  $('#shList').classList.toggle('on',mode==='list');
+  $('#shDetail').classList.toggle('on',mode==='detail');
+  const {full,snaps}=sheetMetrics();
+  const idx=Math.max(0,Math.min(snaps.length-1,snapIdx));
+  const y=full-snaps[idx];
+  sheetApply(y);
+  state.sheet.snap=idx;
+}
+function sheetVisibleH(){ return SHEET.full===undefined?0:SHEET.full-state.sheet.y; }
+
+(function initSheet(){
+  const el=$('#sheet'), grip=$('#grip');
+  const compute=()=>{
+    const m=sheetMetrics(); SHEET.full=m.full; SHEET.snaps=m.snaps; SHEET.vh=m.vh;
+    el.style.height=m.full+'px';
+    const idx=Math.min(state.sheet.snap,m.snaps.length-1);
+    sheetApply(m.full-m.snaps[idx],false);
+  };
+  compute();
+  addEventListener('resize',()=>{compute();map.invalidateSize();});
+
+  let startY=0,startYTrans=0,active=false;
+  grip.addEventListener('pointerdown',e=>{
+    active=true;startY=e.clientY;startYTrans=state.sheet.y;
+    grip.setPointerCapture(e.pointerId);el.style.transition='none';
+  });
+  grip.addEventListener('pointermove',e=>{
+    if(!active)return;
+    const dy=e.clientY-startY;
+    let y=startYTrans+dy;
+    const minY=SHEET.full-SHEET.snaps[SHEET.snaps.length-1];
+    const maxY=SHEET.full-SHEET.snaps[0];
+    y=Math.max(minY-30,Math.min(maxY+40,y)); // резиновость
+    sheetApply(y,false);
+  });
+  grip.addEventListener('pointerup',e=>{
+    if(!active)return;active=false;
+    const dy=e.clientY-startY;
+    const m=sheetMetrics();
+    let idx=state.sheet.snap;
+    if(Math.abs(dy)>40) idx=Math.max(0,Math.min(m.snaps.length-1, state.sheet.snap+(dy>0?1:-1)));
+    else { // ближайший
+      const cur=SHEET.full-state.sheet.y;
+      let best=0,bd=1e9;
+      m.snaps.forEach((s,i)=>{const d=Math.abs(s-cur);if(d<bd){bd=d;best=i;}});
+      idx=best;
+    }
+    sheetSet(state.sheet.mode,idx);buzz(8);
+  });
+  grip.addEventListener('pointercancel',()=>{active=false;sheetSet(state.sheet.mode,state.sheet.snap);});
+
+  // тап по грипу без движения — циклическое переключение
+  let tapT=0,tapY=0;
+  grip.addEventListener('pointerdown',e=>{tapT=Date.now();tapY=e.clientY;});
+  grip.addEventListener('pointerup',e=>{
+    if(Date.now()-tapT<250 && Math.abs(e.clientY-tapY)<8){
+      const m=sheetMetrics();
+      sheetSet(state.sheet.mode,(state.sheet.snap+1)%m.snaps.length);buzz(8);
+    }
+  });
+
+  // список в штоке
+  $('#listM').addEventListener('click',e=>{
+    const li=e.target.closest('li[data-id]');
+    if(li) selectSystem(li.dataset.id);
+  });
+})();
+
+function openSheetDetail(sys){
+  state.sheet.mode='detail';
+  $('#shList').classList.remove('on');
+  $('#shDetail').classList.add('on');
+  $('#sName').textContent=sys.name;
+  fillBar(sys,$('#rFill'),$('#rMin'),$('#rMax'));
+  $('#sRows').innerHTML=rowsHTML(sys);
+  $('#sDeps').innerHTML=sys.deployments.length
+    ? sys.deployments.map(d=>`<li>${d.approximate?'≈ ':''}${d.name} <span style="color:var(--muted)">· ${d.lat.toFixed(2)}, ${d.lon.toFixed(2)}</span></li>`).join('')
     : '<li style="color:var(--muted)">фиксированные точки не публикуются — используйте режим ◈ на карте</li>';
+  $('#sSrcs').innerHTML=sys.sources.map(x=>`<li><a href="${x.url}" target="_blank" rel="noopener">${x.label}</a></li>`).join('');
+  $('#sNote').textContent=sys.notes||'';
+  sheetSet('detail',0); // peek — кольца видны
+  $('#shDetail').scrollTop=0;
+}
+function sheetBackToList(){
+  state.sheet.mode='list';
+  $('#shDetail').classList.remove('on');
+  $('#shList').classList.add('on');
+  sheetSet('list',1);
+}
 
-  $('#cSrcs').innerHTML=s.sources.map(x=>`<li><a href="${x.url}" target="_blank" rel="noopener">${x.label}</a></li>`).join('');
-  $('#cNote').textContent=s.notes||'';
-
-  $('#card').hidden=false;
-
-  // на мобильном: прячем список, карта на весь экран
-  if(matchMedia('(max-width:900px)').matches){
-    document.body.classList.add('mapmode');
-    map.invalidateSize();
+/* -------------------------------------------------------------- выбор ----- */
+function selectSystem(id){
+  const s=SYSTEMS.find(x=>x.id===id); if(!s)return;
+  state.selected=s;
+  renderLists();buzz();
+  if(isMobile()){
+    openSheetDetail(s);
+  }else{
+    showCard(s);
   }
-
   const origins = s.deployments.length ? s.deployments : [{name:'произвольная точка',lat:map.getCenter().lat,lon:map.getCenter().lng,approximate:false}];
   drawRings(s,origins);
   if(!s.deployments.length) enablePointMode(true);
 }
 
-function selectSystem(id,fly=true){
-  const s=SYSTEMS.find(x=>x.id===id); if(!s)return;
-  state.selected=s;
-  renderList();
-  showCard(s);
+function showCard(s){ // десктоп
+  $('#cName').textContent=s.name;
+  fillBar(s,$('#cFill'),$('#crMin'),$('#crMax'));
+  $('#cRows').innerHTML=rowsHTML(s);
+  $('#cDeps').innerHTML=s.deployments.length
+    ? s.deployments.map(d=>`<li>${d.approximate?'≈ ':''}${d.name} <span style="color:var(--muted)">· ${d.lat.toFixed(2)}, ${d.lon.toFixed(2)}</span></li>`).join('')
+    : '<li style="color:var(--muted)">фиксированные точки не публикуются — используйте режим ◈ на карте</li>';
+  $('#cSrcs').innerHTML=s.sources.map(x=>`<li><a href="${x.url}" target="_blank" rel="noopener">${x.label}</a></li>`).join('');
+  $('#cNote').textContent=s.notes||'';
+  $('#card').hidden=false;
 }
 
 /* -------------------------------------------------- режим произвольной точки */
@@ -431,9 +700,9 @@ function enablePointMode(auto=false){
   $('#btnPoint').classList.add('on');
   $('#pointBar').hidden=false;
   $('#pointMsg').textContent = auto
-    ? 'точек развёртывания нет — кликните по карте, чтобы построить кольца от любой точки'
+    ? 'точек развёртывания нет — кликните по карте'
     : 'кликните по карте — кольца от выбранной точки';
-  document.getElementById('map').style.cursor='crosshair';
+  document.getElementById('map').style.cursor='crosshair';buzz();
 }
 function disablePointMode(){
   state.pointMode=false;
@@ -450,32 +719,48 @@ map.on('click',e=>{
 });
 
 /* ------------------------------------------------------------- обработчики */
-$('#list').addEventListener('click',e=>{
-  const li=e.target.closest('li[data-id]');
-  if(li) selectSystem(li.dataset.id);
+for(const ul of ['#list','#listM']){
+  $(ul).addEventListener('click',e=>{
+    const li=e.target.closest('li[data-id]');
+    if(li) selectSystem(li.dataset.id);
+  });
+}
+$('#q').addEventListener('input',e=>{state.filters.q=e.target.value;renderLists();});
+$('#qM').addEventListener('input',e=>{state.filters.q=e.target.value;renderLists();});
+$('#fCountry').addEventListener('change',e=>{state.filters.country=e.target.value;$('#fCountryM').value=e.target.value;renderLists();});
+$('#fCountryM').addEventListener('change',e=>{state.filters.country=e.target.value;$('#fCountry').value=e.target.value;renderLists();});
+$('#fClass').addEventListener('change',e=>{
+  state.filters.klass=e.target.value;
+  $$('#chips .chip').forEach(c=>c.classList.toggle('on',c.dataset.k===e.target.value));
+  renderLists();
 });
-$('#q').addEventListener('input',e=>{state.filters.q=e.target.value;renderList();});
-$('#fCountry').addEventListener('change',e=>{state.filters.country=e.target.value;renderList();});
-$('#fClass').addEventListener('change',e=>{state.filters.klass=e.target.value;renderList();});
+$('#chips').addEventListener('click',e=>{
+  const c=e.target.closest('.chip');if(!c)return;
+  state.filters.klass=c.dataset.k;
+  $$('#chips .chip').forEach(x=>x.classList.toggle('on',x===c));
+  $('#fClass').value=c.dataset.k;
+  renderLists();buzz();
+});
 
 $('#btnPoint').addEventListener('click',()=>{
   state.pointMode ? disablePointMode()
                   : (state.selected ? enablePointMode(false) : null);
 });
 $('#pointCancel').addEventListener('click',disablePointMode);
+
 $('#cardClose').addEventListener('click',()=>{
   // кольца и выбранная система остаются — закрывается только панель
   $('#card').hidden=true;
-  if(document.body.classList.contains('mapmode')){
-    document.body.classList.remove('mapmode');
-    setTimeout(()=>map.invalidateSize(),160);
-  }
   disablePointMode();
 });
+$('#shBack').addEventListener('click',()=>{sheetBackToList();buzz();});
+
+$('#legendPill').addEventListener('click',()=>{$('#legendPill').classList.toggle('open');});
 
 const openModal=()=>{$('#modalWrap').hidden=false;};
 const closeModal=()=>{$('#modalWrap').hidden=true;};
 $('#btnInfo').addEventListener('click',openModal);
+$('#btnInfoM').addEventListener('click',openModal);
 $('#modalClose').addEventListener('click',closeModal);
 $('#modalWrap').addEventListener('click',e=>{if(e.target.id==='modalWrap')closeModal();});
 
@@ -483,10 +768,11 @@ document.addEventListener('keydown',e=>{
   if(e.key!=='Escape')return;
   if(!$('#modalWrap').hidden) closeModal();
   else if(state.pointMode) disablePointMode();
-  else if(!$('#card').hidden){$('#cardClose').click();}
+  else if(isMobile() && state.sheet.mode==='detail') sheetBackToList();
+  else if(!$('#card').hidden) $('#cardClose').click();
 });
 
-renderList();
+renderLists();
 </script>
 </body>
 </html>
