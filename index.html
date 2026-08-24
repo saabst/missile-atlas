@@ -15,7 +15,7 @@
   html,body{height:100%}
   body{background:var(--bg);color:var(--text);font:14px/1.45 -apple-system,"Segoe UI",Roboto,Arial,sans-serif}
 
-  #app{display:flex;height:100vh}
+  #app{display:flex;height:100vh;height:100dvh}
   /* ---------------------------------------------------------- сайдбар */
   #sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);background:var(--panel);
     border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:1200}
@@ -115,8 +115,10 @@
 
   @media (max-width:900px){
     #app{flex-direction:column-reverse}
-    #sidebar{width:100%;min-width:0;height:44vh;border-right:none;border-top:1px solid var(--border)}
-    #card{top:auto;bottom:12px;width:auto;left:12px}
+    #sidebar{width:100%;min-width:0;height:44vh;height:44dvh;border-right:none;border-top:1px solid var(--border)}
+    #card{top:10px;left:10px;right:10px;bottom:auto;width:auto;max-height:48%}
+    #legend{font-size:10.5px;padding:6px 8px;bottom:22px}
+    body.pointmode #legend{opacity:.12}
   }
 </style>
 </head>
@@ -414,6 +416,7 @@ function selectSystem(id,fly=true){
 /* -------------------------------------------------- режим произвольной точки */
 function enablePointMode(auto=false){
   state.pointMode=true;
+  document.body.classList.add('pointmode');
   $('#btnPoint').classList.add('on');
   $('#pointBar').hidden=false;
   $('#pointMsg').textContent = auto
@@ -423,6 +426,7 @@ function enablePointMode(auto=false){
 }
 function disablePointMode(){
   state.pointMode=false;
+  document.body.classList.remove('pointmode');
   $('#btnPoint').classList.remove('on');
   $('#pointBar').hidden=true;
   document.getElementById('map').style.cursor='';
