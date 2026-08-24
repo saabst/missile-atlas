@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ракетный атлас — досягаемость по открытым данным</title>
+<link rel="stylesheet" href="lib/leaflet.css">
+<style>
+  :root{
+    --bg:#0b0e14; --panel:#11151d; --panel2:#161b25; --border:#232b38;
+    --text:#dbe2ea; --muted:#8a94a6; --accent:#e8a13c; --cyan:#4fc3f7;
+    --sidebar-w:340px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--text);font:14px/1.45 -apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+
+  #app{display:flex;height:100vh}
+  /* ---------------------------------------------------------- сайдбар */
+  #sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);background:var(--panel);
+    border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:1200}
+  #sidebar header{display:flex;align-items:flex-start;justify-content:space-between;
+    padding:14px 14px 10px;border-bottom:1px solid var(--border)}
+  #sidebar h1{font-size:17px;font-weight:700;letter-spacing:.3px}
+  #sidebar .sub{color:var(--muted);font-size:11px;margin-top:3px}
+  #btnInfo{background:var(--panel2);border:1px solid var(--border);color:var(--text);
+    width:30px;height:30px;border-radius:50%;font-size:15px;font-style:italic;font-family:Georgia,serif;
+    cursor:pointer;flex-shrink:0}
+  #btnInfo:hover{border-color:var(--accent);color:var(--accent)}
+  #searchwrap{padding:10px 12px 6px}
+  #q{width:100%;background:var(--panel2);border:1px solid var(--border);color:var(--text);
+    padding:7px 10px;border-radius:6px;font-size:13px;outline:none}
+  #q:focus{border-color:var(--accent)}
+  .filters{display:flex;gap:6px;padding:0 12px 10px}
+  .filters select{flex:1;background:var(--panel2);border:1px solid var(--border);color:var(--text);
+    padding:6px 8px;border-radius:6px;font-size:12px;outline:none}
+  #list{list-style:none;overflow-y:auto;flex:1;padding-bottom:8px}
+  #list li{padding:9px 12px 9px 10px;border-left:3px solid transparent;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.03)}
+  #list li:hover{background:var(--panel2)}
+  #list li.sel{border-left-color:var(--accent);background:var(--panel2)}
+  #list .nm{font-weight:600;font-size:13.5px}
+  #list .mt{display:flex;gap:6px;align-items:center;margin-top:3px;font-size:11px;color:var(--muted);flex-wrap:wrap}
+  .badge{padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;color:#0b0e14}
+  .b-cruise{background:var(--cyan)} .b-ballistic{background:#ef5350}
+  .b-hyper{background:var(--accent)} .b-icbm{background:#b388ff}
+  #sidebar footer{padding:8px 12px;border-top:1px solid var(--border);color:var(--muted);font-size:10.5px;line-height:1.5}
+  #sidebar footer a{color:var(--muted)}
+
+  /* ------------------------------------------------------------- карта */
+  #main{flex:1;position:relative}
+  #map{position:absolute;inset:0;background:#0b0e14}
+  #map:fullscreen{width:100vw;height:100vh}
+
+  #legend{position:absolute;left:10px;bottom:26px;z-index:1050;background:rgba(17,21,29,.92);
+    border:1px solid var(--border);border-radius:6px;padding:8px 11px;font-size:11.5px;color:var(--muted);
+    display:flex;flex-direction:column;gap:5px}
+  .lg{display:flex;align-items:center;gap:8px}
+  .sw{width:26px;height:0;border-top:2px solid}
+  .sw-max{border-color:var(--accent);border-top-style:dashed}
+  .sw-min{border-color:var(--cyan)}
+
+  #btnPoint{position:absolute;top:10px;left:50px;z-index:1060;background:rgba(17,21,29,.94);
+    border:1px solid var(--border);color:var(--text);padding:7px 12px;border-radius:6px;font-size:12.5px;cursor:pointer}
+  #btnPoint:hover,#btnPoint.on{border-color:var(--accent);color:var(--accent)}
+
+  #pointBar{position:absolute;left:50%;transform:translateX(-50%);bottom:22px;z-index:1150;
+    background:rgba(17,21,29,.96);border:1px solid var(--accent);border-radius:6px;
+    padding:8px 12px;display:flex;gap:12px;align-items:center;font-size:12.5px}
+  #pointCancel{background:none;border:none;color:var(--accent);font-size:16px;cursor:pointer;line-height:1}
+
+  /* ---------------------------------------------------------- карточка */
+  #card{position:absolute;top:12px;right:12px;width:360px;max-width:calc(100vw - 24px);
+    max-height:calc(100vh - 24px);overflow-y:auto;z-index:1200;background:rgba(17,21,29,.97);
+    border:1px solid var(--border);border-radius:8px;padding:14px 16px}
+  #card h2{font-size:15.5px;padding-right:26px}
+  #cardClose{position:absolute;top:10px;right:10px;background:none;border:none;color:var(--muted);
+    font-size:18px;cursor:pointer}
+  #cardClose:hover{color:var(--text)}
+  .rows{margin-top:10px;display:flex;flex-direction:column;gap:7px}
+  .row{display:flex;justify-content:space-between;gap:12px;font-size:12.5px;border-bottom:1px dotted rgba(255,255,255,.07);padding-bottom:6px}
+  .row .k{color:var(--muted);flex-shrink:0}
+  .row .v{text-align:right}
+  #card .note{margin-top:10px;font-size:12px;color:var(--muted);line-height:1.5}
+  #card h3{font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:14px 0 6px}
+  #card ul{list-style:none;display:flex;flex-direction:column;gap:4px;font-size:12.5px}
+  #card ul.src a{color:var(--cyan);text-decoration:none;font-size:12px}
+  #card ul.src a:hover{text-decoration:underline}
+  .rngbar{margin-top:12px}
+  .rngbar .cap{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px}
+  .rngbar .track{height:6px;background:var(--panel2);border-radius:3px;overflow:hidden}
+  .rngbar .fill{height:100%;background:linear-gradient(90deg,var(--cyan),var(--accent))}
+
+  /* ------------------------------------------------------------ модалка */
+  #modalWrap{position:fixed;inset:0;z-index:2000;background:rgba(4,6,10,.72);
+    display:flex;align-items:center;justify-content:center;padding:20px}
+  #modal{background:var(--panel);border:1px solid var(--border);border-radius:10px;
+    width:min(720px,100%);max-height:88vh;overflow-y:auto;padding:26px 30px}
+  #modal h2{font-size:19px;margin-bottom:4px}
+  #modal .ver{color:var(--muted);font-size:12px;margin-bottom:18px}
+  #modal h3{font-size:13.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--accent);margin:20px 0 8px}
+  #modal p,#modal li{font-size:13.5px;line-height:1.65;color:var(--text)}
+  #modal p+p{margin-top:8px}
+  #modal ul,#modal ol{padding-left:20px;display:flex;flex-direction:column;gap:5px}
+  #modal .dim{color:var(--muted)}
+  #modal code{background:var(--panel2);padding:1px 5px;border-radius:4px;font-size:12px;color:var(--cyan)}
+  #modalClose{float:right;background:none;border:1px solid var(--border);color:var(--muted);
+    width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:15px}
+  #modalClose:hover{color:var(--text);border-color:var(--text)}
+  #modal a{color:var(--cyan)}
+
+  [hidden]{display:none !important}
+  ::-webkit-scrollbar{width:9px;height:9px}
+  ::-webkit-scrollbar-thumb{background:#2a3342;border-radius:5px}
+  ::-webkit-scrollbar-track{background:transparent}
+
+  @media (max-width:900px){
+    #app{flex-direction:column-reverse}
+    #sidebar{width:100%;min-width:0;height:44vh;border-right:none;border-top:1px solid var(--border)}
+    #card{top:auto;bottom:12px;width:auto;left:12px}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar">
+    <header>
+      <div>
+        <h1>РАКЕТНЫЙ АТЛАС</h1>
+        <div class="sub" id="metaSub"></div>
+      </div>
+      <button id="btnInfo" title="Что это и как читать">i</button>
+    </header>
+    <div id="searchwrap"><input id="q" type="text" placeholder="Поиск по названию или стране"></div>
+    <div class="filters">
+      <select id="fCountry"></select>
+      <select id="fClass"></select>
+    </div>
+    <ul id="list"></ul>
+    <footer>
+      Данные: открытые источники (CSIS Missile Threat и др.)<br>
+      Код — MIT · База данных — CC BY-SA 4.0
+    </footer>
+  </aside>
+
+  <main id="main">
+    <div id="map"></div>
+
+    <button id="btnPoint" hidden title="Построить кольца от любой точки карты">◈ кольца от произвольной точки</button>
+
+    <div id="pointBar" hidden>
+      <span id="pointMsg">кликните по карте — кольца от выбранной точки</span>
+      <button id="pointCancel" title="Отменить">×</button>
+    </div>
+
+    <div id="legend">
+      <div class="lg"><span class="sw sw-min"></span>минимальная оценка дальности</div>
+      <div class="lg"><span class="sw sw-max"></span>максимальная оценка дальности</div>
+      <div class="lg"><span style="opacity:.55">≈</span>пунктир маркера — расположение приблизительное</div>
+    </div>
+  </main>
+</div>
+
+<!-- карточка системы -->
+<aside id="card" hidden>
+  <button id="cardClose" title="Закрыть">×</button>
+  <h2 id="cName"></h2>
+  <div class="rngbar">
+    <div class="cap"><span id="rMin"></span><span>дальность, км</span><span id="rMax"></span></div>
+    <div class="track"><div class="fill" id="rFill"></div></div>
+  </div>
+  <div class="rows" id="cRows"></div>
+  <h3>Точки развёртывания</h3>
+  <ul id="cDeps"></ul>
+  <h3>Источники</h3>
+  <ul class="src" id="cSrcs"></ul>
+  <p class="note" id="cNote"></p>
+</aside>
+
+<!-- модальное окно «Информация» -->
+<div id="modalWrap" hidden>
+  <div id="modal" role="dialog" aria-modal="true">
+    <button id="modalClose" title="Закрыть">×</button>
+    <h2>Ракетный атлас — что это?</h2>
+    <div class="ver" id="modalVer"></div>
+
+    <h3>Что это</h3>
+    <p>Интерактивный атлас досягаемости ракетных комплексов мира, собранный целиком из открытых источников.
+       Выбираете систему — карта показывает зоны досягаемости от известных точек развёртывания.
+       Можно построить кольца и от произвольной точки: так видно, что меняется при смещении пусковой позиции.</p>
+
+    <h3>Зачем это нужно</h3>
+    <p>Новость «комплекс передислоцирован» остаётся абстракцией, пока цифры километров не превращаются в геометрию
+       поверх знакомой карты. Атлас делает ровно это: показывает, какие города, базы и регионы попадают в зону,
+       а какие остаются вне её. Инструмент образовательный — он про масштаб и географию, а не прогнозы.</p>
+
+    <h3>Как читать карту</h3>
+    <ul>
+      <li><b style="color:var(--cyan)">сплошное голубое кольцо</b> — нижняя граница опубликованных оценок дальности;</li>
+      <li><b style="color:var(--accent)">жёлтый пунктир</b> — верхняя граница оценок. Реальная досягаемость лежит между кольцами;</li>
+      <li>белая точка — точка развёртывания; <b>≈</b> рядом с ней означает приблизительную зону, а не точную позицию;</li>
+      <li>режим <code>◈</code> строит кольца от любого места на карте;</li>
+      <li>время полёта указывается для крылатых ракет расчётом по маршевой скорости; для баллистических — текстовые оценки из публикаций.</li>
+    </ul>
+
+    <h3>Откуда данные</h3>
+    <p id="modalMeta"></p>
+    <p>У каждой системы в карточке перечислены конкретные источники. Основные справочные корпуса:
+       <a href="https://missilethreat.csis.org" target="_blank" rel="noopener">CSIS Missile Threat</a>,
+       открытые энциклопедии и публикации специализированных СМИ.</p>
+
+    <h3>Насколько этому можно верить</h3>
+    <p>Честный ответ: с точностью открытых данных. Практически это означает:</p>
+    <ul>
+      <li>дальности крылатых ракет известны хорошо (ошибка порядка ±10%) — скорость стабильна, время подлёта считается уверенно;</li>
+      <li>баллистические малой и средней дальности — первое приближение: квазибаллистические траектории ломают простую дугу расчёта;</li>
+      <li>стратегический класс (МБР) — территория разведоценок, где сами публикуемые числа плавают на десятки процентов;</li>
+      <li>часть публичных ТТХ может быть искажена намеренно — интервалы здесь не украшение, а способ честно показать разброс источников;</li>
+      <li>мобильные комплексы не имеют фиксированных позиций: их точки на карте — документированные зоны базирования, а не места пуска.</li>
+    </ul>
+
+    <h3>Чего атлас не делает</h3>
+    <ul>
+      <li>не показывает реальные позиции, перемещения или планы — только статичную открытую картину;</li>
+      <li>не претендует на оперативную точность и не является инструментом планирования;</li>
+      <li>не оценивает вероятности конфликтов и не даёт политических оценок;</li>
+      <li>не учитывает средства ПРО, рельеф, запретные зоны и правила ведения войны.</li>
+    </ul>
+
+    <h3>Как добавить систему</h3>
+    <p>База — обычный JSON со схемой. Заведите issue или пришлите pull request с записью о системе
+       и ссылками на источники: данные проходят модерацию на предмет расхождений между публикациями.
+       Особенно ценны дополнения по регионам, слабо представленным в западных справочниках.</p>
+
+    <h3>Лицензии</h3>
+    <p class="dim">Код проекта — MIT. База данных — CC BY-SA 4.0 с обязательным указанием исходных источников.
+       Тайлы карты © OpenStreetMap contributors, © CARTO. Проект некоммерческий и образовательный.</p>
+  </div>
+</div>
+
+<script src="lib/leaflet.js"></script>
+<script src="data.js"></script>
+<script>
+'use strict';
+const $ = s => document.querySelector(s);
+
+/* ------------------------------------------------------------------ карта */
+const baseLayers = {
+  "Тёмная": L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    {maxZoom:20, subdomains:'abcd', attribution:'© OpenStreetMap contributors © CARTO'}),
+  "Светлая": L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    {maxZoom:20, subdomains:'abcd', attribution:'© OpenStreetMap contributors © CARTO'}),
+  "Спутник": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    {maxZoom:19, attribution:'© Esri World Imagery'})
+};
+const map = L.map('map', {center:[40,32], zoom:4, worldCopyJump:true, zoomControl:true});
+baseLayers["Тёмная"].addTo(map);
+L.control.layers(baseLayers, null, {position:'topright'}).addTo(map);
+
+const FsControl = L.Control.extend({
+  options:{position:'topleft'},
+  onAdd(){
+    const div = L.DomUtil.create('div','leaflet-bar leaflet-control');
+    const a = L.DomUtil.create('a','',div);
+    a.href='#'; a.innerHTML='⛶'; a.title='Карта на весь экран';
+    L.DomEvent.on(a,'click',e=>{
+      L.DomEvent.stop(e);
+      document.fullscreenElement ? document.exitFullscreen() : $('#map').requestFullscreen();
+    });
+    return div;
+  }
+});
+new FsControl().addTo(map);
+document.addEventListener('fullscreenchange',()=>setTimeout(()=>map.invalidateSize(),120));
+
+/* --------------------------------------------------- геодезические кольца */
+function destPoint(lat,lonDeg,brgDeg,distKm){
+  const R=6371, d=Math.PI/180;
+  const b=brgDeg*d, l1=lat*d, o1=lonDeg*d, dr=distKm/R;
+  const l2=Math.asin(Math.sin(l1)*Math.cos(dr)+Math.cos(l1)*Math.sin(dr)*Math.cos(b));
+  const o2=o1+Math.atan2(Math.sin(b)*Math.sin(dr)*Math.cos(l1),Math.cos(dr)-Math.sin(l1)*Math.sin(l2));
+  return [l2/d, ((o2/d)+540)%360-180];
+}
+function geodesicRing(lat,lon,km,n=160){
+  const pts=[];
+  for(let i=0;i<n;i++) pts.push(destPoint(lat,lon,i*360/n,km));
+  return pts;
+}
+
+/* -------------------------------------------------------------- состояние */
+const state = {
+  selected:null,     // объект системы
+  rings:null,        // L.layerGroup текущих колец
+  pointMode:false,
+  filters:{q:'',country:'',klass:''}
+};
+
+const CLASS_COLORS = {"Крылатая":"#4fc3f7","Баллистическая":"#ef5350","Гиперзвуковая":"#e8a13c","МБР":"#b388ff"};
+const CLASS_BADGE  = {"Крылатая":"b-cruise","Баллистическая":"b-ballistic","Гиперзвуковая":"b-hyper","МБР":"b-icbm"};
+
+/* --------------------------------------------------------------- интерфейс */
+$('#metaSub').textContent = `досягаемость по открытым данным · v${DATA_META.version} · ${DATA_META.updated}`;
+$('#modalVer').textContent = `версия данных ${DATA_META.version}, обновлено ${DATA_META.updated} · ${DATA_META.disclaimer}`;
+$('#modalMeta').textContent = `Актуальная редакция базы: ${DATA_META.updated}. ` +
+  'Каждая запись содержит ссылки на источники — они видны в карточке системы.';
+
+// селекторы фильтров
+{
+  const cs=[...new Set(SYSTEMS.map(s=>s.country))].sort((a,b)=>a.localeCompare(b,'ru'));
+  const ks=[...new Set(SYSTEMS.map(s=>s.klass))];
+  for(const c of cs) $('#fCountry').insertAdjacentHTML('beforeend',`<option value="${c}">${c}</option>`);
+  for(const k of ks) $('#fClass').insertAdjacentHTML('beforeend',`<option value="${k}">${k}</option>`);
+}
+
+function fmtRange(s){ return `${s.range_km_min.toLocaleString('ru-RU')}–${s.range_km_max.toLocaleString('ru-RU')} км`; }
+
+function renderList(){
+  const f=state.filters, q=f.q.trim().toLowerCase();
+  const items=SYSTEMS.filter(s=>{
+    if(f.country && s.country!==f.country) return false;
+    if(f.klass && s.klass!==f.klass) return false;
+    if(q && !(s.name.toLowerCase().includes(q)||s.country.toLowerCase().includes(q))) return false;
+    return true;
+  }).sort((a,b)=>a.name.localeCompare(b.name,'ru'));
+  $('#list').innerHTML = items.map(s=>`
+    <li data-id="${s.id}" class="${state.selected&&state.selected.id===s.id?'sel':''}">
+      <div class="nm">${s.name}</div>
+      <div class="mt">
+        <span class="badge ${CLASS_BADGE[s.klass]}">${s.klass}</span>
+        <span>${s.country}</span>
+        <span>${fmtRange(s)}</span>
+      </div>
+    </li>`).join('') || '<li style="cursor:default;color:var(--muted)">ничего не найдено</li>';
+}
+
+function clearRings(){ if(state.rings){ map.removeLayer(state.rings); state.rings=null; } }
+
+function drawRings(sys, origins){
+  clearRings();
+  const g=L.layerGroup(); let bounds=null;
+  for(const o of origins){
+    const rMax=geodesicRing(o.lat,o.lon,sys.range_km_max);
+    const rMin=geodesicRing(o.lat,o.lon,sys.range_km_min);
+    L.polygon(rMax,{color:'#e8a13c',weight:1.5,dashArray:'6 6',fill:true,fillOpacity:.05,interactive:true})
+      .bindTooltip(`${sys.name}: до ${sys.range_km_max.toLocaleString('ru-RU')} км — макс. оценка${o.name?' · '+o.name:''}`)
+      .addTo(g);
+    L.polygon(rMin,{color:'#4fc3f7',weight:1.5,fill:false,interactive:true})
+      .bindTooltip(`${sys.name}: до ${sys.range_km_min.toLocaleString('ru-RU')} км — мин. оценка${o.name?' · '+o.name:''}`)
+      .addTo(g);
+    L.circleMarker([o.lat,o.lon],{radius:5,color:'#fff',weight:1.5,fillColor:o.approximate?'#777':'#fff',
+        fillOpacity:.95}).bindTooltip((o.approximate?'≈ ':'')+o.name).addTo(g);
+    const b=L.polygon(rMax).getBounds();
+    bounds = bounds ? bounds.extend(b) : b;
+  }
+  state.rings=g; g.addTo(map);
+  if(bounds && origins.length){
+    const pt=bounds.getCenter();
+    const zoom=Math.min(map.getBoundsZoom(bounds)-1,10);
+    const off=map.project(pt,zoom).subtract([180,0]);
+    map.flyTo(map.unproject(off,zoom),zoom,{duration:.6});
+  }
+}
+
+function flightTimeText(s){
+  if(s.speed_kmh){
+    const min=s.range_km_max/s.speed_kmh*60;
+    const h=Math.floor(min/60), m=Math.round(min%60);
+    return `~${h?h+' ч ':''}${m} мин на макс. дальность (расчёт по маршевой скорости)`;
+  }
+  return s.flight_note || null;
+}
+
+function showCard(s){
+  $('#cName').textContent=s.name;
+  $('#rMin').textContent=s.range_km_min.toLocaleString('ru-RU');
+  $('#rMax').textContent=s.range_km_max.toLocaleString('ru-RU');
+  // полоса диапазона относительно общего максимума выборки
+  const gmax=Math.max(...SYSTEMS.map(x=>x.range_km_max));
+  $('#rFill').style.width=(s.range_km_min/gmax*100)+'%';
+  $('#rFill').style.marginLeft=(s.range_km_min/gmax*100)+'%';
+  $('#rFill').style.width=(Math.max(1,(s.range_km_max-s.range_km_min)/gmax*100))+'%';
+
+  const rows=[
+    ['Класс',s.klass],
+    ['Страна',s.country],
+    ['Носитель',s.platform],
+    ['Скорость',s.speed_mach?s.speed_mach+' М':null],
+    ['Дальность',fmtRange(s)],
+    ['Статус',s.status],
+    ['Время полёта',flightTimeText(s)]
+  ].filter(r=>r[1]);
+  $('#cRows').innerHTML=rows.map(([k,v])=>`<div class="row"><span class="k">${k}</span><span class="v">${v}</span></div>`).join('');
+
+  $('#cDeps').innerHTML=s.deployments.length
+    ? s.deployments.map(d=>`<li>${d.approximate?'≈ ':''}${d.name} <span style="color:var(--muted)">· ${d.lat.toFixed(2)}, ${d.lon.toFixed(2)}</span></li>`).join('')
+    : '<li style="color:var(--muted)">фиксированные точки не публикуются — используйте режим ◈ на карте</li>';
+
+  $('#cSrcs').innerHTML=s.sources.map(x=>`<li><a href="${x.url}" target="_blank" rel="noopener">${x.label}</a></li>`).join('');
+  $('#cNote').textContent=s.notes||'';
+
+  $('#card').hidden=false;
+
+  const origins = s.deployments.length ? s.deployments : [{name:'произвольная точка',lat:map.getCenter().lat,lon:map.getCenter().lng,approximate:false}];
+  drawRings(s,origins);
+  if(!s.deployments.length) enablePointMode(true);
+}
+
+function selectSystem(id,fly=true){
+  const s=SYSTEMS.find(x=>x.id===id); if(!s)return;
+  state.selected=s;
+  renderList();
+  showCard(s);
+}
+
+/* -------------------------------------------------- режим произвольной точки */
+function enablePointMode(auto=false){
+  state.pointMode=true;
+  $('#btnPoint').classList.add('on');
+  $('#pointBar').hidden=false;
+  $('#pointMsg').textContent = auto
+    ? 'точек развёртывания нет — кликните по карте, чтобы построить кольца от любой точки'
+    : 'кликните по карте — кольца от выбранной точки';
+  document.getElementById('map').style.cursor='crosshair';
+}
+function disablePointMode(){
+  state.pointMode=false;
+  $('#btnPoint').classList.remove('on');
+  $('#pointBar').hidden=true;
+  document.getElementById('map').style.cursor='';
+}
+
+map.on('click',e=>{
+  if(!state.pointMode||!state.selected)return;
+  disablePointMode();
+  drawRings(state.selected,[{name:'выбранная точка',lat:e.latlng.lat,lon:e.latlng.lng,approximate:true}]);
+});
+
+/* ------------------------------------------------------------- обработчики */
+$('#list').addEventListener('click',e=>{
+  const li=e.target.closest('li[data-id]');
+  if(li) selectSystem(li.dataset.id);
+});
+$('#q').addEventListener('input',e=>{state.filters.q=e.target.value;renderList();});
+$('#fCountry').addEventListener('change',e=>{state.filters.country=e.target.value;renderList();});
+$('#fClass').addEventListener('change',e=>{state.filters.klass=e.target.value;renderList();});
+
+$('#btnPoint').addEventListener('click',()=>{
+  state.pointMode ? disablePointMode()
+                  : (state.selected ? enablePointMode(false) : null);
+});
+$('#pointCancel').addEventListener('click',disablePointMode);
+$('#cardClose').addEventListener('click',()=>{$('#card').hidden=true;clearRings();disablePointMode();state.selected=null;renderList();});
+
+const openModal=()=>{$('#modalWrap').hidden=false;};
+const closeModal=()=>{$('#modalWrap').hidden=true;};
+$('#btnInfo').addEventListener('click',openModal);
+$('#modalClose').addEventListener('click',closeModal);
+$('#modalWrap').addEventListener('click',e=>{if(e.target.id==='modalWrap')closeModal();});
+
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape')return;
+  if(!$('#modalWrap').hidden) closeModal();
+  else if(state.pointMode) disablePointMode();
+  else if(!$('#card').hidden){$('#cardClose').click();}
+});
+
+renderList();
+</script>
+</body>
+</html>
