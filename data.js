@@ -410,6 +410,69 @@ const SYSTEMS = [
     deployments: []
   },
 
+  // ---------------------------------------------------------------- УКРАИНА
+  {
+    id: "neptune-r360",
+    name: "Нептун (Р-360)",
+    country: "Украина", klass: "Крылатая",
+    platform: "мобильные береговые ПУ",
+    speed_mach: 0.85, speed_kmh: 900,
+    range_km_min: 280, range_km_max: 300,
+    status: "на вооружении",
+    flight_note: null,
+    notes: "Противокорабельная; в апреле 2022 двумя попаданиями выведен из строя крейсер «Москва». Применялась и по наземным целям.",
+    sources: [
+      {label: "Wikipedia: R-360 Neptune", url: "https://en.wikipedia.org/wiki/R-360_Neptune"}
+    ],
+    deployments: []
+  },
+  {
+    id: "long-neptune",
+    name: "Длинный Нептун",
+    country: "Украина", klass: "Крылатая",
+    platform: "мобильные наземные ПУ",
+    speed_mach: null, speed_kmh: null,
+    range_km_min: 500, range_km_max: 1000,
+    status: "на вооружении",
+    flight_note: null,
+    notes: "Модернизация Р-360 под удары по наземным целям. Заявлена дальность до 1000 км (март 2025); независимых подтверждений верхней границы нет.",
+    sources: [
+      {label: "Слово и Дело: сравнение украинских ракет", url: "https://ru.slovoidilo.ua/2025/09/03/infografika/obshhestvo/novye-ukrainskie-rakety-kakaya-dalnost-skorost-i-ves-boegolovok"}
+    ],
+    deployments: []
+  },
+  {
+    id: "flamingo",
+    name: "Фламинго",
+    country: "Украина", klass: "Крылатая",
+    platform: "наземные ТПУ",
+    speed_mach: null, speed_kmh: null,
+    range_km_min: 1000, range_km_max: 3000,
+    status: "в разработке",
+    flight_note: null,
+    notes: "Анонс августа 2025; госиспытания пройдено, серийное производство. Заявлено до 3000 км и БЧ свыше 1 т; наблюдатели оценивают практически достижимые цели до ~2400 км. Самый широкий интервал в базе — данные только от разработчика.",
+    sources: [
+      {label: "BBC: что известно о «Фламинго»", url: "https://www.bbc.com/russian/articles/cy0qd5png8qo"},
+      {label: "Wikipedia: Фламинго (ракета)", url: "https://ru.wikipedia.org/wiki/%D0%A4%D0%BB%D0%B0%D0%BC%D0%B8%D0%BD%D0%B3%D0%BE_(%D1%80%D0%B0%D0%BA%D0%B5%D1%82%D0%B0)"}
+    ],
+    deployments: []
+  },
+  {
+    id: "sapsan-hrim2",
+    name: "Сапсан (Грим-2)",
+    country: "Украина", klass: "Баллистическая",
+    platform: "мобильные наземные ПУ",
+    speed_mach: null, speed_kmh: null,
+    range_km_min: 280, range_km_max: 500,
+    status: "в разработке",
+    flight_note: null,
+    notes: "ОТРК с БЧ ~500 кг; по состоянию на июнь 2025 — начальный этап серийного производства.",
+    sources: [
+      {label: "Wikipedia: Hrim-2", url: "https://en.wikipedia.org/wiki/Hrim-2"}
+    ],
+    deployments: []
+  },
+
   // -------------------------------------------------------------------- МБР
   {
     id: "minuteman-iii",

@@ -116,6 +116,7 @@
   @media (max-width:900px){
     #app{flex-direction:column-reverse}
     #sidebar{width:100%;min-width:0;height:44vh;height:44dvh;border-right:none;border-top:1px solid var(--border)}
+    body.mapmode #sidebar{display:none}
     #card{top:10px;left:10px;right:10px;bottom:auto;width:auto;max-height:48%}
     #legend{font-size:10.5px;padding:6px 8px;bottom:22px}
     body.pointmode #legend{opacity:.12}
@@ -358,7 +359,10 @@ function drawRings(sys, origins){
   if(bounds && origins.length){
     const pt=bounds.getCenter();
     const zoom=Math.min(map.getBoundsZoom(bounds)-1,10);
-    const off=map.project(pt,zoom).subtract([180,0]);
+    // на узких экранах карточка сверху — уводим центр колец под неё
+    const off = matchMedia('(max-width:900px)').matches
+      ? map.project(pt,zoom).subtract([0,Math.round(innerHeight*0.18)])
+      : map.project(pt,zoom).subtract([180,0]);
     map.flyTo(map.unproject(off,zoom),zoom,{duration:.6});
   }
 }
@@ -401,6 +405,12 @@ function showCard(s){
   $('#cNote').textContent=s.notes||'';
 
   $('#card').hidden=false;
+
+  // на мобильном: прячем список, карта на весь экран
+  if(matchMedia('(max-width:900px)').matches){
+    document.body.classList.add('mapmode');
+    map.invalidateSize();
+  }
 
   const origins = s.deployments.length ? s.deployments : [{name:'произвольная точка',lat:map.getCenter().lat,lon:map.getCenter().lng,approximate:false}];
   drawRings(s,origins);
@@ -453,7 +463,15 @@ $('#btnPoint').addEventListener('click',()=>{
                   : (state.selected ? enablePointMode(false) : null);
 });
 $('#pointCancel').addEventListener('click',disablePointMode);
-$('#cardClose').addEventListener('click',()=>{$('#card').hidden=true;clearRings();disablePointMode();state.selected=null;renderList();});
+$('#cardClose').addEventListener('click',()=>{
+  // кольца и выбранная система остаются — закрывается только панель
+  $('#card').hidden=true;
+  if(document.body.classList.contains('mapmode')){
+    document.body.classList.remove('mapmode');
+    setTimeout(()=>map.invalidateSize(),160);
+  }
+  disablePointMode();
+});
 
 const openModal=()=>{$('#modalWrap').hidden=false;};
 const closeModal=()=>{$('#modalWrap').hidden=true;};
