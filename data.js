@@ -6,7 +6,9 @@
 //
 //  Схема записи:
 //  {
-//    id, name, country, class: "Крылатая"|"Баллистическая"|"Гиперзвуковая"|"МБР",
+//    id, name,
+//    country: строка ИЛИ массив строк (совместные разработки),
+//    klass: "Крылатая"|"Баллистическая"|"Гиперзвуковая"|"МБР",
 //    platform: носитель/базирование,
 //    speed_mach: число|null, speed_kmh: число|null (для расчёта времени полёта),
 //    range_km_min, range_km_max,
@@ -107,7 +109,7 @@ const SYSTEMS = [
   {
     id: "storm-shadow",
     name: "Storm Shadow / SCALP EG",
-    country: "Великобритания / Франция", klass: "Крылатая",
+    country: ["Великобритания", "Франция"], klass: "Крылатая",
     platform: "Tornado GR4, Typhoon, Rafale, Mirage 2000",
     speed_mach: 0.9, speed_kmh: 1000,
     range_km_min: 250, range_km_max: 560,
@@ -125,7 +127,7 @@ const SYSTEMS = [
   {
     id: "taurus-kepd350",
     name: "Taurus KEPD 350",
-    country: "Германия / Швеция", klass: "Крылатая",
+    country: ["Германия", "Швеция"], klass: "Крылатая",
     platform: "Tornado IDS, Typhoon (план), Gripen",
     speed_mach: 0.9, speed_kmh: 1000,
     range_km_min: 500, range_km_max: 600,
@@ -143,7 +145,7 @@ const SYSTEMS = [
   {
     id: "brahmos-a",
     name: "БраМос (BrahMos-A)",
-    country: "Индия / Россия", klass: "Крылатая",
+    country: ["Индия", "Россия"], klass: "Крылатая",
     platform: "Су-30МКИ, корабли, наземные ПУ",
     speed_mach: 2.8, speed_kmh: 3400,
     range_km_min: 290, range_km_max: 450,

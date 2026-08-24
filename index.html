@@ -298,6 +298,7 @@ const state = {
 
 const CLASS_COLORS = {"Крылатая":"#4fc3f7","Баллистическая":"#ef5350","Гиперзвуковая":"#e8a13c","МБР":"#b388ff"};
 const CLASS_BADGE  = {"Крылатая":"b-cruise","Баллистическая":"b-ballistic","Гиперзвуковая":"b-hyper","МБР":"b-icbm"};
+const cArr = s => Array.isArray(s.country) ? s.country : [s.country];
 
 /* --------------------------------------------------------------- интерфейс */
 $('#metaSub').textContent = `досягаемость по открытым данным · v${DATA_META.version} · ${DATA_META.updated}`;
@@ -307,7 +308,7 @@ $('#modalMeta').textContent = `Актуальная редакция базы: $
 
 // селекторы фильтров
 {
-  const cs=[...new Set(SYSTEMS.map(s=>s.country))].sort((a,b)=>a.localeCompare(b,'ru'));
+  const cs=[...new Set(SYSTEMS.flatMap(cArr))].sort((a,b)=>a.localeCompare(b,'ru'));
   const ks=[...new Set(SYSTEMS.map(s=>s.klass))];
   for(const c of cs) $('#fCountry').insertAdjacentHTML('beforeend',`<option value="${c}">${c}</option>`);
   for(const k of ks) $('#fClass').insertAdjacentHTML('beforeend',`<option value="${k}">${k}</option>`);
@@ -318,9 +319,9 @@ function fmtRange(s){ return `${s.range_km_min.toLocaleString('ru-RU')}–${s.ra
 function renderList(){
   const f=state.filters, q=f.q.trim().toLowerCase();
   const items=SYSTEMS.filter(s=>{
-    if(f.country && s.country!==f.country) return false;
+    if(f.country && !cArr(s).includes(f.country)) return false;
     if(f.klass && s.klass!==f.klass) return false;
-    if(q && !(s.name.toLowerCase().includes(q)||s.country.toLowerCase().includes(q))) return false;
+    if(q && !(s.name.toLowerCase().includes(q)||cArr(s).join(' ').toLowerCase().includes(q))) return false;
     return true;
   }).sort((a,b)=>a.name.localeCompare(b.name,'ru'));
   $('#list').innerHTML = items.map(s=>`
@@ -328,7 +329,7 @@ function renderList(){
       <div class="nm">${s.name}</div>
       <div class="mt">
         <span class="badge ${CLASS_BADGE[s.klass]}">${s.klass}</span>
-        <span>${s.country}</span>
+        <span>${cArr(s).join(', ')}</span>
         <span>${fmtRange(s)}</span>
       </div>
     </li>`).join('') || '<li style="cursor:default;color:var(--muted)">ничего не найдено</li>';
@@ -383,7 +384,7 @@ function showCard(s){
 
   const rows=[
     ['Класс',s.klass],
-    ['Страна',s.country],
+    ['Страна',cArr(s).join(', ')],
     ['Носитель',s.platform],
     ['Скорость',s.speed_mach?s.speed_mach+' М':null],
     ['Дальность',fmtRange(s)],
